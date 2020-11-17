@@ -43,6 +43,22 @@ class Venue(db.Model):
 
     # TODO: implement any missing fields, as a database migration using Flask-Migrate
 
+    """
+    {
+        "city": "San Francisco",
+        "state": "CA",
+        "venues": [{
+            "id": 1,
+            "name": "The Musical Hop",
+            "num_upcoming_shows": 0,
+        }, {
+            "id": 3,
+            "name": "Park Square Live Music & Coffee",
+            "num_upcoming_shows": 1,
+        }]
+    }
+    """
+
 
 class Artist(db.Model):
     __tablename__ = 'Artist'
@@ -58,8 +74,59 @@ class Artist(db.Model):
 
     # TODO: implement any missing fields, as a database migration using Flask-Migrate
 
-# TODO Implement Show and Artist models, and complete all model relationships and properties, as a database migration.
+    """
+    {
+        "id": 1,
+        "name": "The Musical Hop",
+        "genres": ["Jazz", "Reggae", "Swing", "Classical", "Folk"],
+        "address": "1015 Folsom Street",
+        "city": "San Francisco",
+        "state": "CA",
+        "phone": "123-123-1234",
+        "website": "https://www.themusicalhop.com",
+        "facebook_link": "https://www.facebook.com/TheMusicalHop",
+        "seeking_talent": True,
+        "seeking_description": "We are on the lookout for a local artist to play every two weeks. Please call us.",
+        "image_link": "https://images.unsplash.com/photo-1543900694-133f37abaaa5?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=400&q=60",
+        "past_shows": [{
+            "artist_id": 4,
+            "artist_name": "Guns N Petals",
+            "artist_image_link": "https://images.unsplash.com/photo-1549213783-8284d0336c4f?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=300&q=80",
+            "start_time": "2019-05-21T21:30:00.000Z"
+        }],
+        "upcoming_shows": [],
+        "past_shows_count": 1,
+        "upcoming_shows_count": 0,
+    }
+    """
 
+
+# Step 1: Implement Show and Artist models,
+# and complete all model relationships and properties,
+# as a database migration. (Making it easier to figuer out relations and properties with other models)
+
+class Show(db.Model):
+    __tablename__ = 'Show'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String)
+    venue_id = db.Column(db.Integer)
+    venue_name = db.Column(db.String(120))
+    artist_id = db.Column(db.Integer)
+    artist_name = db.Column(db.String(120))
+    artist_image_link = db.Column(db.String)
+    start_time = db.Column(db.DateTime)
+
+    """
+    {
+        "venue_id": 1,
+        "venue_name": "The Musical Hop",
+        "artist_id": 4,
+        "artist_name": "Guns N Petals",
+        "artist_image_link": "https://images.unsplash.com/photo-1549213783-8284d0336c4f?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=300&q=80",
+        "start_time": "2019-05-21T21:30:00.000Z"
+    }
+    """
 #----------------------------------------------------------------------------#
 # Filters.
 #----------------------------------------------------------------------------#
