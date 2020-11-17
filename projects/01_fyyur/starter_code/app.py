@@ -70,7 +70,10 @@ class Artist(db.Model):
     phone = db.Column(db.String(120))
     genres = db.Column(db.String(120))
     image_link = db.Column(db.String(500))
+    website = db.Column(db.String(120))
     facebook_link = db.Column(db.String(120))
+    seeking_talent = db.Column(db.Boolean)
+    seeking_description = db.Column(db.String(500))
 
     # TODO: implement any missing fields, as a database migration using Flask-Migrate
 
@@ -103,7 +106,8 @@ class Artist(db.Model):
 
 # Step 1: Implement Show and Artist models,
 # and complete all model relationships and properties,
-# as a database migration. (Making it easier to figuer out relations and properties with other models)
+# as a database migration.
+# (Making it easier to figuer out relations and properties with other models)
 
 class Show(db.Model):
     __tablename__ = 'Show'
