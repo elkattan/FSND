@@ -13,7 +13,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 import logging
 from logging import Formatter, FileHandler
-from flask_wtf import Form
+from flask_wtf import FlaskForm
 from forms import *
 
 #----------------------------------------------------------------------------#
@@ -167,15 +167,15 @@ def index():
 def venues():
     # TODO: replace with real venues data.
     #       num_shows should be aggregated based on number of upcoming shows per venue.
-    upcomig_shows = Show.query.filter(Show.start_time >= datetime.now())
-    venues = db.session.query(func.count(Venue.id).label(
-        'num_upcoming_shows'), Venue.city).group_by(Venue.city).all()
-    # venues = Venue.query.with_entities(
-    #     Venue.id,
-    #     Venue.name,
-    #     func.sum(Show.id.in_(s.id for s in upcomig_shows)
-    #              ).label("num_upcoming_shows"),
-    # ).group_by(Venue.city, Venue.name, Venue.id).all()
+    # upcomig_shows = Show.query.filter(Show.start_time >= datetime.now())
+    # venues = db.session.query(func.count(Venue.id).label(
+    #     'num_upcoming_shows'), Venue.city).group_by(Venue.city, Venue.state).all()
+    venues = Venue.query.with_entities(
+        Venue.id,
+        Venue.name,
+        func.count(Show.id.in_(s.id for s in Show.query.filter(
+            Show.start_time >= datetime.now()))).label("num_upcoming_shows"),
+    ).group_by(Venue.city, Venue.state, Venue.name, Venue.id).all()
     print(venues)
     data = [{
         "city": "San Francisco",
@@ -198,7 +198,7 @@ def venues():
             "num_upcoming_shows": 0,
         }]
     }]
-    return render_template('pages/venues.html', areas=data)
+    return render_template('pages/venues.html', areas=venues)
 
 
 @app.route('/venues/search', methods=['POST'])
@@ -220,35 +220,18 @@ def search_venues():
 @app.route('/venues/<int:venue_id>')
 def show_venue(venue_id):
     # shows the venue page with the given venue_id
-    # TODO: replace with real venue data from the venues table, using venue_id
-    data = Venue.query.join(Venue.shows).with_entities(
-        func.count(Show.id).label("upcoming_shows_count"),
-        func.count(Show.id).label("past_shows_count"),
-    ).get_or_404(pk=venue_id)
+    # Step 5: replace with real venue data from the venues table, using venue_id
+    data = Venue.query.get_or_404(venue_id)
+    shows = Show.query.filter(Show.venue_id == venue_id).all()
+    upcoming_shows = list(
+        filter(lambda show: show.start_time >= datetime.now(), shows))
+    past_shows = list(
+        filter(lambda show: show.start_time < datetime.now(), shows))
+    data["upcoming_shows"] = upcoming_shows
+    data["past_shows"] = past_shows
+    data["upcoming_shows_count"] = len(upcoming_shows)
+    data["past_shows_count"] = len(past_shows)
     print("VENUE Search: ", data)
-    data1 = {
-        "id": 1,
-        "name": "The Musical Hop",
-        "genres": ["Jazz", "Reggae", "Swing", "Classical", "Folk"],
-        "address": "1015 Folsom Street",
-        "city": "San Francisco",
-        "state": "CA",
-        "phone": "123-123-1234",
-        "website": "https://www.themusicalhop.com",
-        "facebook_link": "https://www.facebook.com/TheMusicalHop",
-        "seeking_talent": True,
-        "seeking_description": "We are on the lookout for a local artist to play every two weeks. Please call us.",
-        "image_link": "https://images.unsplash.com/photo-1543900694-133f37abaaa5?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=400&q=60",
-        "past_shows": [{
-            "artist_id": 4,
-            "artist_name": "Guns N Petals",
-            "artist_image_link": "https://images.unsplash.com/photo-1549213783-8284d0336c4f?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=300&q=80",
-            "start_time": "2019-05-21T21:30:00.000Z"
-        }],
-        "upcoming_shows": [],
-        "past_shows_count": 1,
-        "upcoming_shows_count": 0,
-    }
     return render_template('pages/show_venue.html', venue=data)
 
 #  Create Venue
@@ -263,18 +246,24 @@ def create_venue_form():
 
 @app.route('/venues/create', methods=['POST'])
 def create_venue_submission():
+    form = None
     try:
         venue = Venue()
-        form = VenueForm(formdata=request.form)
-        if form.validate_on_submit():
-            form.populate_obj(venue)
-            db.session.add(venue)
-            db.session.commit()
+        form = VenueForm()
+        # make sure form is valid
+        # if not, raise an error
+        assert(form.validate_on_subimit())
+        form.populate_obj(venue)
+        db.session.add(venue)
+        db.session.commit()
         # on successful db insert, flash success
         flash('Venue ' + request.form['name'] + ' was successfully listed!')
     except:
+        # In case of Database error or form validation error
+        # alert the user and return the same form data
         flash('An error occurred. Venue ' +
               request.form['name'] + ' could not be listed.', 'error')
+        return render_template('forms/new_venue.html', form=form)
     return render_template('pages/home.html')
 
 
@@ -334,7 +323,7 @@ def show_artist(artist_id):
     data = Artist.query.join(Artist.shows).with_entities(
         func.count(Show.id).label("upcoming_shows_count"),
         func.count(Show.id).label("past_shows_count"),
-    ).get_or_404(pk=artist_id)
+    ).get_or_404(artist_id)
     data1 = {
         "id": 4,
         "name": "Guns N Petals",
@@ -366,7 +355,7 @@ def show_artist(artist_id):
 @app.route('/artists/<int:artist_id>/edit', methods=['GET'])
 def edit_artist(artist_id):
     form = ArtistForm()
-    artist = Artist.query.get_or_404(pk=artist_id)
+    artist = Artist.query.get_or_404(artist_id)
     return render_template('forms/edit_artist.html', form=form, artist=artist)
 
 
@@ -385,7 +374,7 @@ def edit_artist_submission(artist_id):
 @app.route('/venues/<int:venue_id>/edit', methods=['GET'])
 def edit_venue(venue_id):
     form = VenueForm()
-    venue = Venue.query.get_or_404(pk=venue_id)
+    venue = Venue.query.get_or_404(venue_id)
     return render_template('forms/edit_venue.html', form=form, venue=venue)
 
 
@@ -411,19 +400,24 @@ def create_artist_form():
 
 @app.route('/artists/create', methods=['POST'])
 def create_artist_submission():
+    form = None
     try:
         artist = Artist()
-        form = ArtistForm(formdata=request.form)
-        if form.validate_on_submit():
-            form.populate_obj(artist)
-            db.session.add(artist)
-            db.session.commit()
+        form = ArtistForm()
+        # make sure form is valid
+        # if not, raise an error
+        assert(form.validate_on_subimit())
+        form.populate_obj(artist)
+        db.session.add(artist)
+        db.session.commit()
         # on successful db insert, flash success
-        flash('Artist ' + request.form['name'] +
-              ' was successfully listed!')
+        flash('Artist ' + request.form['name'] + ' was successfully listed!')
     except:
+        # In case of Database error or form validation error
+        # alert the user and return the same form data
         flash('An error occurred. Artist ' +
               request.form['name'] + ' could not be listed.', 'error')
+        return render_template('forms/new_artist.html', form=form)
     return render_template('pages/home.html')
 
 
@@ -446,17 +440,23 @@ def create_shows():
 
 @app.route('/shows/create', methods=['POST'])
 def create_show_submission():
+    form = None
     try:
         show = Show()
-        form = ShowForm(formdata=request.form)
-        if form.validate_on_submit():
-            form.populate_obj(show)
-            db.session.add(show)
-            db.session.commit()
+        form = ShowForm()
+        # make sure form is valid
+        # if not, raise an error
+        assert(form.validate_on_subimit())
+        form.populate_obj(show)
+        db.session.add(show)
+        db.session.commit()
         # on successful db insert, flash success
         flash('Show was successfully listed!')
     except:
+        # In case of Database error or form validation error
+        # alert the user and return the same form data
         flash('An error occurred. Show could not be listed.', 'error')
+        return render_template('forms/new_show.html', form=form)
     return render_template('pages/home.html')
 
 
