@@ -1,6 +1,5 @@
 import os
 import unittest
-import json
 from flask_sqlalchemy import SQLAlchemy
 
 from flaskr import create_app
@@ -12,12 +11,10 @@ class TriviaTestCase(unittest.TestCase):
 
     def setUp(self):
         """Define test variables and initialize app."""
+        os.environ["DATABASE_NAME"] = "trivia_test"
         self.app = create_app()
         self.client = self.app.test_client
-        self.database_name = "trivia_test"
-        self.database_path = "postgres://{}/{}".format(
-            'localhost:5432', self.database_name)
-        setup_db(self.app, self.database_path)
+        setup_db(self.app)
 
         # binds the app to the current context
         with self.app.app_context():
@@ -30,10 +27,7 @@ class TriviaTestCase(unittest.TestCase):
         """Executed after reach test"""
         pass
 
-    """
-    @TODO: DONE
-    Write at least one test for each test for successful operation and for expected errors.
-    """
+    # Success scenarios
 
     def test_questions_pagination(self):
         """Test Questions pagination endpoint"""
@@ -80,7 +74,7 @@ class TriviaTestCase(unittest.TestCase):
         self.assertTrue(len(data["questions"]))
 
     def test_category_questions(self):
-        """Test Grabbing Questions with category is endpoint"""
+        """Test Grabbing Questions of a category endpoint"""
         res = self.client().get('/categories/3/questions')
         data = res.get_json()
 
@@ -102,6 +96,30 @@ class TriviaTestCase(unittest.TestCase):
             self.assertTrue(len(previous_questions) ==
                             len(set(previous_questions)))
             previous_questions.append(data["question"]["id"])
+
+    # Failed scenarios
+
+    def test_question_create_error(self):
+        """Test Adding new Question error endpoint"""
+        newQuestion = {
+            "answer": "BAD request: No question",
+            "category": 3,
+            "difficulty": 2
+        }
+
+        res = self.client().post('/questions/create', json=newQuestion)
+        data = res.get_json()
+
+        self.assertEqual(res.status_code, 400)
+        self.assertTrue(data["error"])
+
+    def test_question_delete_error(self):
+        """Test deleting a Question error endpoint"""
+        res = self.client().delete('/questions/999')
+        data = res.get_json()
+
+        self.assertEqual(res.status_code, 404)
+        self.assertTrue(data["error"])
 
 
 # Make the tests conveniently executable
