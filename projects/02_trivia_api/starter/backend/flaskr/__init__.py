@@ -55,7 +55,7 @@ def create_app(test_config=None):
             question = Question.query.get(id)
             question.delete()
             return jsonify(error=False), 201
-        except:
+        except BaseException:
             return jsonify(error=True, msg="Question not found"), 404
 
     @app.route("/questions/create", methods=["POST"])
@@ -65,18 +65,17 @@ def create_app(test_config=None):
             answer = request.json.get("answer")
             category = int(request.json.get("category"))
             difficulty = int(request.json.get("difficulty"))
-            assert type(question) is str and len(question) > 5
-            assert type(answer) is str and len(answer) > 1
-            assert type(category) is int
-            assert type(difficulty) is int
+            assert isinstance(question, str) and len(question) > 5
+            assert isinstance(answer, str) and len(answer) > 1
+            assert isinstance(category, int)
+            assert isinstance(difficulty, int)
             Question(
                 question=question,
                 answer=answer,
                 category=category,
                 difficulty=difficulty,
             ).insert()
-        except Exception as err:
-            print(err)
+        except BaseException:
             return jsonify(error=True, msg="Failed to add question"), 400
         return jsonify(error=False), 201
 
@@ -96,8 +95,9 @@ def create_app(test_config=None):
     @app.route("/categories/<int:id>/questions")
     def getQuestuionsOfCategory(id):
         total_questions = Question.query.count()
-        questions = [q.format()
-                     for q in Question.query.filter(Question.category == id).all()]
+        questions = [
+            q.format() for q in Question.query.filter(
+                Question.category == id).all()]
         current_category = None
         return jsonify(
             total_questions=total_questions,
