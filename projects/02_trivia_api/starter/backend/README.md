@@ -67,26 +67,134 @@ One note before you delve into your tasks: for each endpoint you are expected to
 9. Create error handlers for all expected errors including 400, 404, 422 and 500. 
 
 REVIEW_COMMENT
+
+## Endpoints
 ```
-This README is missing documentation of your endpoints. Below is an example for your endpoint to get all categories. Please use it as a reference for creating your documentation and resubmit your code. 
-
-Endpoints
+GET '/questions'
 GET '/categories'
-GET ...
-POST ...
-DELETE ...
+GET '/categories/{id}/questions'
+POST '/questions/create'
+POST '/questions/search'
+POST '/quizzes'
+DELETE '/questions/{id}'
+```
 
-GET '/categories'
+### GET '/questions'
+- Fetches a dictionary that contains list of questions of specified page, object of category id as keys and type as values, total questions and current category
+- Request Arguments: page as an integer that specifies the required page
+- Returns: An object with questions: `List<Question>`, categories: `Object<Int, String>`, total_questions: `Int`, current_category: `Category`
+
+```
+{
+    "categories": Object { 1: "Science", 2: "Art", 3: "Geography", … },
+    "current_category": null,
+    "questions": [ <Question>, <Question>,... ],
+    "total_questions": 18
+}
+```
+
+### GET '/categories'
 - Fetches a dictionary of categories in which the keys are the ids and the value is the corresponding string of the category
 - Request Arguments: None
 - Returns: An object with a single key, categories, that contains a object of id: category_string key:value pairs. 
-{'1' : "Science",
-'2' : "Art",
-'3' : "Geography",
-'4' : "History",
-'5' : "Entertainment",
-'6' : "Sports"}
 
+```
+{
+    "1" : "Science",
+    "2" : "Art",
+    "3" : "Geography",
+    "4" : "History",
+    "5" : "Entertainment",
+    "6" : "Sports"
+}
+```
+
+### GET '/categories/{id}/questions'
+- Fetches a dictionary that contains list of questions related to specified category in URL parameter `id`, total questions and current category
+- Request Arguments: None
+- Returns: An object with questions: `List<Question>`, total_questions: `Int`, current_category: `Category`
+
+```
+{
+    "current_category": null
+    "questions": [ <Question>, <Question>,... ]
+    "total_questions": 17
+}
+```
+
+### POST '/questions/create'
+- Takes question, answer, category and difficulty to craete a new question record
+- Request Arguments: None
+- Request Body: question: `String`, answer: `String`, category: `Int` (valid category ID), difficulty: `Int`
+- Returns: A Boolean that indicates that request failed or not (error: `Bool`) and a message (msg: `String`) that specify the error reason if occured
+
+```
+{
+    "error": true,
+    "msg": "Reason Text"
+
+}
+```
+
+### POST '/questions/search'
+- Takes searchTerm to fetch questions including that search term
+- Request Arguments: None
+- Request Body: searchTerm: `String`
+- Returns: An object with questions: `List<Question>`, total_questions: `Int`, current_category: `Category`
+
+```
+{
+    "current_category": null,
+    "questions": [ <Question>, <Question>,... ],
+    "total_questions": 18
+}
+```
+
+### POST '/quizzes'
+- Takes previous questions list and quiz category selected and return new random question from that category
+- Request Arguments: None
+- Request Body: previous_questions: `List<Int>` (category IDs), quiz_category: `Int` (valid category ID)
+- Returns: An object of new random question: Question
+
+```
+{
+    "question": Question
+}
+```
+
+### DELETE '/questions/{id}'
+- Deleted a question using the question ID specified in URL parameter `id`
+- Request Arguments: None
+- Request Body: None
+- Returns: A Boolean that indicates that request failed or not (error: `Bool`) and a message (msg: `String`) that specify the error reason if occured
+
+```
+{
+    "error": false
+}
+```
+
+## Model Refrence
+
+### `Question`
+
+```
+{
+    "id": Int,
+    "question: "String",
+    "answer: "String",
+    "category: "String",
+    "difficulty: Int
+}
+```
+
+### `Category`
+
+```
+{
+    "id": Int,
+    "type": "String"
+}
 ```
 
 
